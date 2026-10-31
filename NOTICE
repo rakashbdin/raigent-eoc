@@ -1,0 +1,26 @@
+RAiGENT-EOC
+Copyright (c) 2026 — RAiGENT-EOC contributors
+
+This product is a derivative work of ECC.
+
+ECC
+Copyright (c) 2026 Affaan Mustafa
+Licensed under the MIT License.
+https://github.com/affaan-m/ECC
+
+The MIT License text applicable to both ECC and this work is reproduced in the
+LICENSE file at the root of this repository, with the original copyright notice
+preserved.
+
+---
+
+Notes on provenance:
+
+- Agents, commands, skills, and rules under `.opencode/` are ported from ECC.
+  Ported skills retain `metadata.origin: ECC` and may contain `affaan-m/ECC`
+  URLs. References to "ECC" in skill and agent bodies generally refer to the
+  upstream project and are intentional.
+- `scripts/` is ported from ECC and retains some internal `ecc-*` identifiers
+  as implementation detail.
+- The OpenCode-native plugin (`eco.ts`), the custom tools, and the OpenCode
+  integration are original to RAiGENT-EOC and released under the same MIT terms.

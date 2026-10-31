@@ -1,0 +1,9 @@
+{
+  "name": "raigent-eoc-opencode",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "RAiGENT-EOC OpenCode plugin + tools (local config surface, zero runtime dependencies)",
+  "license": "MIT",
+  "dependencies": {}
+}
