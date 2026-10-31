@@ -1,8 +1,9 @@
 /**
  * Changed Files Tool
  *
- * Lists the files changed by agents in this session as a navigable tree,
- * using the in-memory changed-files store maintained by the plugin.
+ * Lists the files changed in this session — by agents, and by external tools
+ * the plugin watches — as a navigable tree, using the in-memory changed-files
+ * store maintained by the plugin.
  */
 
 import type { ChangeType, TreeNode } from "../lib/changed-files-store.ts"
@@ -32,7 +33,7 @@ export default function createChangedFilesTool(_directory: string): EocTool {
   return {
     name: "changed-files",
     description:
-      "List files changed by agents in this session as a navigable tree. Shows added (+), modified (~), and deleted (-) indicators. Use filter to show only specific change types. Returns paths for git diff.",
+      "List files changed in this session as a navigable tree. Shows added (+), modified (~), and deleted (-) indicators. Includes edits made by agents and, via the worktree watcher, changes made outside the agent (a second terminal, a formatter, git checkout). Use filter to show only specific change types. Returns paths for git diff.",
     input: {
       type: "object",
       properties: {

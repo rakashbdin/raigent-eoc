@@ -69,6 +69,9 @@ a security regression.
 ## Verify before you merge
 
 ```bash
+# 0. Unit tests for the plugin's file watcher.
+npm test
+
 # 1. Syntax-check the CLI scripts you touched.
 node --check scripts/eoc.js
 

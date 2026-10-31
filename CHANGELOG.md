@@ -4,6 +4,29 @@ All notable changes to RAiGENT-EOC are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project aims
 to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.2 — 2026-10-31
+
+### Fixed
+
+- **External file changes are tracked again.** OpenCode v2 emits no
+  `filesystem.changed`, so only agent edits reached the changed-files store.
+  The plugin now watches the worktree itself (`.opencode/plugins/lib/
+  file-watcher.js`): `fs.watch` per directory, breadth-first under a
+  400-directory cap, debounced, with a depth cap and an ignore list for
+  `node_modules`, `.git`, build output and editor litter. Disable with
+  `EOC_DISABLE_FILE_WATCHER=1`.
+- `changed-files` now reports agent **and** external edits, and classifies a
+  pre-existing file as `modified` rather than `added`.
+- Watcher now reports files already present in a directory created at
+  runtime, ignores symlinks, and prunes stale entries when a directory is
+  deleted (no more `modified` misclassification on recreate).
+
+### Added
+
+- `npm test` — 12 `node --test` cases covering add/modify/delete, debouncing,
+  directories created after start, ignore rules, the breadth-first cap,
+  a throwing subscriber, idempotent `close()` and argument validation.
+
 ## 0.1.1 — 2026-10-31
 
 ### Fixed

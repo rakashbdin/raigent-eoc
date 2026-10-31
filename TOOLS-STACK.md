@@ -18,6 +18,9 @@
   - `ctx.shell.hook("create.before")` — EOC_* env injection
   - `ctx.session.hook("compaction")` — compaction context
   - `ctx.permission.hook("evaluate")` — observed only
+  - worktree watcher (`lib/file-watcher.js`) — `fs.watch` per directory,
+    breadth-first, debounced; replaces the missing `filesystem.changed` event.
+    Bounded by `EOC_DISABLE_FILE_WATCHER`, a 400-directory cap and a depth cap.
   - `ctx.event.subscribe()` — `session.inbox.enqueued`,
     `session.execution.started`, `session.execution.succeeded`,
     `session.deleted`, `filesystem.changed`. This build emits no

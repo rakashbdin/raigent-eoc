@@ -40,6 +40,7 @@ and the `eoc` CLI. It encodes the loop:
 ## Verify
 
 ```bash
+npm test                     # file-watcher unit tests (node --test)
 opencode debug agents
 opencode run --standalone --print-logs --log-level info "reply with exactly: OK"
 # expect   msg="loading plugin" .../.opencode/plugins/eco.ts

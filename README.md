@@ -146,7 +146,7 @@ Registered through the OpenCode v2 plugin API:
 | `format-code` | Detect formatter and format a file |
 | `lint-check` | Detect linter; check or fix |
 | `git-summary` | Branch, status, commits, and diff stats |
-| `changed-files` | Session change tree (added/modified/deleted) |
+| `changed-files` | Session change tree (added/modified/deleted), agent and external edits |
 | `dependency-analyzer` | Outdated, vulnerable, and unused dependencies |
 
 ### Plugin
@@ -166,7 +166,9 @@ wires these hooks and events:
 - `ctx.permission.hook("evaluate")` — **observation only**. EOC logs the
   permission decision but never widens it; OpenCode's own rules always decide.
 - `ctx.event.subscribe()` — `session.created` / `session.idle` /
-  `session.deleted` and `filesystem.changed`.
+  `session.deleted` and `filesystem.changed` (the latter is not emitted in
+  this build; external changes are tracked by the worktree watcher in
+  `.opencode/plugins/lib/file-watcher.js`).
 
 ---
 
@@ -206,6 +208,7 @@ them in the shell that launches OpenCode.
 | `EOC_HOOK_PROFILE` | `minimal` \| `standard` \| `strict` | `standard` | How much automation the plugin runs. |
 | `EOC_DISABLED_HOOKS` | comma-separated hook IDs | *(none)* | Switch individual hooks off. |
 | `EOC_PLUGIN_ROOT` | path | project root | Root the plugin resolves paths against. |
+| `EOC_DISABLE_FILE_WATCHER` | `1` | *(unset)* | Disable the worktree watcher (external changes won't be tracked). |
 
 ### Hook profiles
 

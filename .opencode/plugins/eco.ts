@@ -56,9 +56,11 @@ import createGitSummaryTool from "./tools/git-summary.ts"
 import createChangedFilesTool from "./tools/changed-files.ts"
 import createDependencyAnalyzerTool from "./tools/dependency-analyzer.ts"
 import { clearChanges, initStore, recordChange } from "./lib/changed-files-store.ts"
+import { startFileWatcher } from "./lib/file-watcher.js"
+import type { FileWatcherHandle } from "./lib/file-watcher.js"
 import type { EocTool } from "./tools/types.ts"
 
-const EOC_VERSION = "0.1.1"
+const EOC_VERSION = "0.1.2"
 const EOC_AGENT_COUNT = 71
 const EOC_COMMAND_COUNT = 103
 const EOC_SKILL_COUNT = 311
@@ -542,11 +544,50 @@ export default {
       }
     })()
 
+    // ---- filesystem watcher ------------------------------------------------
+    // OpenCode v2 emits no `filesystem.changed`, so external edits never reached
+    // the changed-files store. Watch the worktree directly instead. Two plugin
+    // instances run in --standalone mode; both watch, and recordChange is
+    // idempotent (Map.set). The debug log is deduped across instances.
+    let fileWatcher: FileWatcherHandle | null = null
+    if (process.env.EOC_DISABLE_FILE_WATCHER === "1") {
+      log("info", "File watcher disabled by EOC_DISABLE_FILE_WATCHER")
+    } else {
+      try {
+        fileWatcher = startFileWatcher({
+          root: worktreePath,
+          onChange: (absolutePath, type) => {
+            changedFilesStore.recordChange(absolutePath, type)
+            if (type !== "deleted") {
+              const dedupeKey = `${absolutePath}\u0000${type}`
+              const now = Date.now()
+              const g = globalThis as { __eocWatcherSeen?: Map<string, number> }
+              const map = g.__eocWatcherSeen ?? (g.__eocWatcherSeen = new Map<string, number>())
+              const last = map.get(dedupeKey) ?? 0
+              if (now - last > 300) {
+                map.set(dedupeKey, now)
+                if (map.size > 4096) map.clear()
+                log("debug", `External change: ${path.relative(worktreePath, absolutePath)} (${type})`)
+              }
+            }
+          },
+        })
+        const limits = [fileWatcher.capped ? "directory cap" : "", fileWatcher.depthLimited ? "depth cap" : ""]
+          .filter(Boolean)
+          .join(", ")
+        const suffix = limits ? ` [${limits} reached]` : ""
+        log("info", `File watcher started (${fileWatcher.watchedDirs} directories, ${fileWatcher.knownFiles} files)${suffix}`)
+      } catch (error: unknown) {
+        log("warn", `File watcher unavailable: ${error instanceof Error ? error.message : String(error)}`)
+      }
+    }
+
     log("info", `RAiGENT-EOC plugin loaded - profile=${currentProfile}`)
 
     // Cleanup runs when the plugin unloads.
     return () => {
       controller.abort()
+      fileWatcher?.close()
       void subscription
     }
   },
