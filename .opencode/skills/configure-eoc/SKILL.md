@@ -104,9 +104,13 @@ they are missing, the plugin failed to load — read the `--print-logs` output
 for `failed to load plugin` or a `could not register ...` message, which names
 the group that failed.
 
-The plugin's own `[EOC] ...` lines (including
-`[EOC] RAiGENT-EOC plugin loaded - profile=<value>`) are written to OpenCode's
-main log at `~/.local/share/opencode/log/opencode.log`, not to `--print-logs`.
+The plugin's own `[EOC] ...` hook lines (including
+`RAiGENT-EOC plugin loaded - profile=<value>` and
+`Session started - profile=<value> (source)`) are written to
+`~/.opencode/log/eoc-plugin.log`, rotated at 1 MB. OpenCode v2 does not forward
+plugin console output to `--print-logs` or to its server log, so this file is
+the only hook trace. `EOC_HOOK_PROFILE=minimal` still logs the plugin load and
+session start; per-hook lines follow the profile.
 
 ## Repair and uninstall
 

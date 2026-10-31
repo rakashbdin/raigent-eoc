@@ -1,6 +1,6 @@
 {
   "name": "raigent-eoc",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "RAiGENT-EOC: OpenCode-native agent harness (plan, test, implement, review, verify, remember, improve). Based on ECC (MIT).",
   "repository": {
     "type": "git",

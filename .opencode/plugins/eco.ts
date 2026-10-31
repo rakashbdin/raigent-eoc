@@ -22,10 +22,16 @@
  *  - `tool.execute.after`   -> `ctx.tool.hook("execute.after")`
  *  - `file.edited`          -> handled in `execute.after` for edit/write, plus
  *                              `filesystem.changed` events for external edits
- *  - `session.created`      -> `ctx.event.subscribe()` ("session.created")
- *  - `session.idle`         -> `ctx.event.subscribe()` ("session.idle")
- *  - `session.deleted`      -> `ctx.event.subscribe()` ("session.deleted")
- *  - `file.watcher.updated` -> `filesystem.changed` event
+ *  - `session.created`      -> no such event in this build. A turn opens with
+ *                              `session.inbox.enqueued` then
+ *                              `session.execution.started`; the plugin also
+ *                              derives start from the first tool/permission
+ *                              event carrying a sessionID, deduped per session.
+ *  - `session.idle`         -> `session.execution.succeeded` (end of turn)
+ *  - `session.deleted`      -> `session.deleted` when emitted; process teardown
+ *                              is the fallback
+ *  - `file.watcher.updated` -> `filesystem.changed` when emitted; agent edits
+ *                              are recorded in `execute.after`
  *  - `experimental.session.compacting` -> `ctx.session.hook("compaction")`
  *  - `permission.ask`       -> `ctx.permission.hook("evaluate")` (observed only;
  *                              see the note on that hook below)
@@ -38,6 +44,7 @@
  */
 
 import * as fs from "fs"
+import * as os from "os"
 import * as path from "path"
 import { execFile } from "node:child_process"
 import createRunTestsTool from "./tools/run-tests.ts"
@@ -51,7 +58,7 @@ import createDependencyAnalyzerTool from "./tools/dependency-analyzer.ts"
 import { clearChanges, initStore, recordChange } from "./lib/changed-files-store.ts"
 import type { EocTool } from "./tools/types.ts"
 
-const EOC_VERSION = "0.1.0"
+const EOC_VERSION = "0.1.1"
 const EOC_AGENT_COUNT = 71
 const EOC_COMMAND_COUNT = 103
 const EOC_SKILL_COUNT = 311
@@ -104,13 +111,31 @@ export default {
     let writeCounter = 0
 
     // ---- logging -----------------------------------------------------------
-    // OpenCode v2's plugin context no longer exposes `client.app.log()`, so
-    // messages go to the server's stdout/stderr, visible with `--print-logs`.
+    // OpenCode v2's plugin context no longer exposes `client.app.log()`, and
+    // this build neither forwards plugin console output to `--print-logs` nor
+    // to the server log. Hook output therefore also goes to a dedicated file
+    // under the EOC data home, which is the only way to debug hooks in a
+    // one-shot `opencode run`.
+    const LOG_FILE = path.join(os.homedir(), ".opencode", "log", "eoc-plugin.log")
+    const LOG_MAX_BYTES = 1_000_000
+    let logWrites = 0
+
     const log = (level: "debug" | "info" | "warn" | "error", message: string) => {
       const line = `[EOC] ${message}`
       if (level === "error") console.error(line)
       else if (level === "warn") console.warn(line)
       else console.log(line)
+
+      try {
+        fs.mkdirSync(path.dirname(LOG_FILE), { recursive: true })
+        if (++logWrites % 200 === 0) {
+          const size = fs.statSync(LOG_FILE, { throwIfNoEntry: false })?.size ?? 0
+          if (size > LOG_MAX_BYTES) fs.writeFileSync(LOG_FILE, "")
+        }
+        fs.appendFileSync(LOG_FILE, `${new Date().toISOString()} ${level.toUpperCase()} ${message}\n`)
+      } catch {
+        // Logging must never break a hook.
+      }
     }
 
     // ---- helpers -----------------------------------------------------------
@@ -200,6 +225,26 @@ export default {
         const count = countConsoleLogs(filePath)
         if (count > 0) log("warn", `console.log found in ${filePath} (${count} occurrence${count > 1 ? "s" : ""})`)
       }
+    }
+
+    // ---- session start -----------------------------------------------------
+    // This OpenCode build emits no `session.created`. A turn opens with
+    // `session.inbox.enqueued` then `session.execution.started`, so start is
+    // derived from the first per-session signal that carries a sessionID and
+    // deduped per session. That covers one-shot `opencode run` sessions, whose
+    // session predates plugin setup.
+    const startedSessions = new Set<string>()
+
+    const onSessionStart = (sessionID: string | undefined, source: string): void => {
+      if (!hookEnabled("session:start", ["minimal", "standard", "strict"])) return
+      const key = sessionID || "unknown"
+      if (startedSessions.has(key)) return
+      if (startedSessions.size > 512) startedSessions.clear()
+      startedSessions.add(key)
+      log("info", `Session started - profile=${currentProfile} (${source})`)
+      // FIX #1: OpenCode-native context files, not CLAUDE.md.
+      if (hasProjectFile("AGENTS.md")) log("info", "Found AGENTS.md - loading project context")
+      if (hasProjectFile("PROJECT.md")) log("info", "Found PROJECT.md - loading project brief")
     }
 
     const onSessionIdle = async (): Promise<void> => {
@@ -319,6 +364,7 @@ export default {
     await safeRegister("tool.execute.before", () =>
       ctx.tool.hook("execute.before", (event) => {
         const args = (event?.input ?? {}) as ToolArgs
+        onSessionStart(event?.sessionID, "tool.execute.before")
 
         if (event?.tool === "write") {
           const filePath = getFilePath(args)
@@ -414,7 +460,7 @@ export default {
           "# EOC Context (preserve across compaction)",
           "",
           `## Active Plugin: RAiGENT-EOC v${EOC_VERSION}`,
-          "- Hooks: shell.env, tool.execute.before/after, session.created/idle/deleted, filesystem.changed, compaction, permission.evaluate",
+          "- Hooks: shell.env, tool.execute.before/after, session start (execution.started), session idle (execution.succeeded), session deleted, filesystem.changed, compaction, permission.evaluate",
           "- Tools: run-tests, check-coverage, security-audit, format-code, lint-check, git-summary, changed-files, dependency-analyzer",
           `- Agents: ${EOC_AGENT_COUNT} specialized subagents (.opencode/agents/)`,
           `- Commands: ${EOC_COMMAND_COUNT} slash commands (.opencode/commands/)`,
@@ -445,6 +491,7 @@ export default {
     // permission rules decide.
     await safeRegister("permission.evaluate", () =>
       ctx.permission.hook("evaluate", (event) => {
+        onSessionStart(event?.sessionID, "permission.evaluate")
         log("debug", `Permission ${event?.effect}: ${event?.action} ${(event?.resources ?? []).join(", ")}`)
       })
     )
@@ -455,18 +502,21 @@ export default {
       try {
         for await (const event of ctx.event.subscribe({ signal: controller.signal })) {
           switch (event?.type) {
-            case "session.created": {
-              // FIX #1: OpenCode-native context files, not CLAUDE.md.
-              if (!hookEnabled("session:start", ["minimal", "standard", "strict"])) break
-              log("info", `Session started - profile=${currentProfile}`)
-              if (hasProjectFile("AGENTS.md")) log("info", "Found AGENTS.md - loading project context")
-              if (hasProjectFile("PROJECT.md")) log("info", "Found PROJECT.md - loading project brief")
+            case "session.created":
+            case "session.inbox.enqueued":
+            case "session.execution.started": {
+              const data = event?.data ?? {}
+              const sid = typeof data.sessionID === "string" ? data.sessionID : typeof data.id === "string" ? data.id : undefined
+              onSessionStart(sid, event?.type ?? "session")
               break
             }
+            case "session.execution.succeeded":
             case "session.idle":
               await onSessionIdle()
               break
             case "session.deleted": {
+              const ended = event?.data?.sessionID ?? event?.data?.id
+              if (typeof ended === "string") startedSessions.delete(ended)
               if (!hookEnabled("session:end-marker", ["minimal", "standard", "strict"])) break
               log("info", "Session ended - cleaning up")
               editedFiles.clear()

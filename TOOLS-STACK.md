@@ -18,8 +18,11 @@
   - `ctx.shell.hook("create.before")` — EOC_* env injection
   - `ctx.session.hook("compaction")` — compaction context
   - `ctx.permission.hook("evaluate")` — observed only
-  - `ctx.event.subscribe()` — `session.created/idle/deleted`,
-    `filesystem.changed`
+  - `ctx.event.subscribe()` — `session.inbox.enqueued`,
+    `session.execution.started`, `session.execution.succeeded`,
+    `session.deleted`, `filesystem.changed`. This build emits no
+    `session.created` / `session.idle`, so session start is derived from the
+    first per-session signal carrying a `sessionID` and deduped per session.
   - (v1's `todo.updated` has no v2 event; the hook was dropped)
 - EOC tools live in `.opencode/plugins/tools/` and are registered by the plugin
   (changed-files, dependency-analyzer, run-tests, check-coverage,

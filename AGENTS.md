@@ -46,8 +46,9 @@ opencode run --standalone --print-logs --log-level info "reply with exactly: OK"
 # and NO   "failed to load plugin"
 ```
 
-The plugin's own `[EOC] ...` lines go to OpenCode's main log
-(`~/.local/share/opencode/log/opencode.log`), not to `--print-logs`.
+The plugin's own `[EOC] ...` hook lines go to `~/.opencode/log/eoc-plugin.log`
+(rotated at 1 MB). OpenCode v2 does not forward plugin console output to
+`--print-logs` or the server log, so that file is the only hook trace.
 
 ## Workflow
 

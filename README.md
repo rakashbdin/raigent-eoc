@@ -68,8 +68,10 @@ If the plugin fails to load, the same output names the failure
 (`failed to load plugin` or `could not register ...`). The eight EOC tools and
 all hooks become available once it loads.
 
-> The plugin's own `[EOC] ...` log lines go to OpenCode's main log at
-> `~/.local/share/opencode/log/opencode.log`, not to `--print-logs`.
+> The plugin's own `[EOC] ...` hook lines go to `~/.opencode/log/eoc-plugin.log`
+> (rotated at 1 MB). This build does not forward plugin console output to
+> `--print-logs` or to OpenCode's server log, so that file is the place to look
+> when a hook misbehaves.
 
 ---
 
