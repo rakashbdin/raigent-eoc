@@ -21,7 +21,7 @@ The operating loop it encodes:
 | --- | --- |
 | [OpenCode](https://opencode.ai) v2 | Built and verified against `v2.0.18`. |
 | Node.js 18+ | For the plugin runtime and the `eoc` CLI. |
-| Git | For versioning and upstream sync. |
+| Git | For versioning. |
 
 No other runtime dependencies. The plugin has **zero npm dependencies** and
 `.opencode/` needs no `npm install`.
@@ -33,7 +33,7 @@ No other runtime dependencies. The plugin has **zero npm dependencies** and
 OpenCode auto-discovers everything when it runs from the repository root.
 
 ```bash
-git clone <your-fork-or-copy> raigent-eoc
+git clone https://github.com/rakashbdin/raigent-eoc.git
 cd raigent-eoc
 
 # Optional: only needed for the `eoc` CLI, not for the OpenCode surface.
