@@ -1,7 +1,7 @@
 # RAiGENT-EOC
 
-**An OpenCode-native agent harness.** 71 specialized agents, 103 slash
-commands, 311 skills, a rule pack, a plugin, and 8 custom tools — all wired for
+**An OpenCode-native agent harness.** 72 specialized agents, 105 slash
+commands, 328 skills, a rule pack, a plugin, and 8 custom tools — all wired for
 [OpenCode](https://opencode.ai) and nothing else.
 
 EOC is a rewrite of [ECC](https://github.com/affaan-m/ECC) (MIT, © Affaan
@@ -46,7 +46,7 @@ That is the whole install for project scope. From inside the folder you get:
 
 ```bash
 opencode debug agents     # your EOC subagents, alongside the built-ins
-/plan                     # any of the 103 commands
+/plan                     # any of the 105 commands
 @planner  add a caching layer to the search endpoint   # invoke an agent
 ```
 

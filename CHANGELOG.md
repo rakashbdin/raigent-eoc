@@ -4,6 +4,32 @@ All notable changes to RAiGENT-EOC are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project aims
 to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.3 — 2026-11-24
+
+### Added
+
+- Upstream ECC sync: `8ce348f` (2026-10-11) → `4adeee6` (2026-11-19).
+  Ported 159 core upstream paths: 1 new agent (`gdscript-reviewer`), 2 new
+  commands (`issue-review`, `ui-canvas`), 22 new skill directories, and
+  updates to 87 existing agents/skills/rules. The upstream skill
+  `claude-devfleet` is now `devfleet`.
+- **All 121 rule files now contain real rule content.** Earlier releases
+  shipped them as empty placeholders.
+
+### Fixed
+
+- The file watcher now closes a stale directory handle before re-arming when a
+  watched directory is deleted and recreated; the delete/recreate flake probe
+  went from 3/30 misses to 0/30.
+- Corrected the `npm test` case count in the 0.1.2 entry (16, not 12).
+
+### Notes
+
+- 12 upstream command rewrites were intentionally not ported; the existing
+  native EOC commands are kept (see `docs/UPSTREAM-SYNC.md` in the conversion
+  workspace).
+- `scripts/` and the plugin were not bulk-synced from upstream.
+
 ## 0.1.2 — 2026-10-31
 
 ### Fixed
@@ -23,7 +49,7 @@ to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- `npm test` — 12 `node --test` cases covering add/modify/delete, debouncing,
+- `npm test` — 16 `node --test` cases covering add/modify/delete, debouncing,
   directories created after start, ignore rules, the breadth-first cap,
   a throwing subscriber, idempotent `close()` and argument validation.
 

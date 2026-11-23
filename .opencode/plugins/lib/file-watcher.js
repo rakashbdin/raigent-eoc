@@ -238,8 +238,11 @@ export function startFileWatcher(options) {
     }
 
     if (stat.isDirectory()) {
-      // A directory appeared (or was renamed into place): start watching it,
-      // and report the files it already contains as added.
+      // A directory appeared, was recreated, or was renamed into place. Drop
+      // any stale watcher on the old inode first: an inotify watch does not
+      // survive delete+recreate, and leaving it registered makes watchTree()
+      // skip re-arming and miss every file in the new directory.
+      closeDir(abs)
       watchTree(abs, 0, true)
       return
     }

@@ -112,11 +112,17 @@ claude -p --allowedTools "Read,Write,Edit,Bash" "Implement the fixes from securi
 **EOC's built-in persistent loop.** A session-aware REPL that calls `claude -p` synchronously with full conversation history.
 
 ```bash
+# Use the configured plugin root or standalone install (~/.opencode or
+# $EOC_CONFIG_DIR). For a reviewed and explicitly authorized ECC checkout:
+# export EOC_PLUGIN_ROOT="/absolute/path/to/reviewed/ECC"
+EOC_ROOT="${EOC_PLUGIN_ROOT:-${EOC_CONFIG_DIR:-$HOME/.claude}}"
+[ -f "$EOC_ROOT/scripts/claw.js" ] || { echo "ECC scripts not found in the selected root (set EOC_PLUGIN_ROOT to an authorized ECC checkout)" >&2; exit 1; }
+
 # Start the default session
-node scripts/claw.js
+node "$EOC_ROOT/scripts/claw.js"
 
 # Named session with skill context
-CLAW_SESSION=my-project CLAW_SKILLS=tdd-workflow,security-review node scripts/claw.js
+CLAW_SESSION=my-project CLAW_SKILLS=tdd-workflow,security-review node "$EOC_ROOT/scripts/claw.js"
 ```
 
 ### How It Works

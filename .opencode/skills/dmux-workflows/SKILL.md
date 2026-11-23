@@ -142,7 +142,12 @@ git merge feat/billing
 EOC now includes a helper for external tmux-pane orchestration with separate git worktrees:
 
 ```bash
-node scripts/orchestrate-worktrees.js plan.json --execute
+# Use the configured plugin root or standalone install (~/.opencode or
+# $EOC_CONFIG_DIR). For a reviewed and explicitly authorized ECC checkout:
+# export EOC_PLUGIN_ROOT="/absolute/path/to/reviewed/ECC"
+EOC_ROOT="${EOC_PLUGIN_ROOT:-${EOC_CONFIG_DIR:-$HOME/.claude}}"
+[ -f "$EOC_ROOT/scripts/orchestrate-worktrees.js" ] || { echo "ECC scripts not found in the selected root (set EOC_PLUGIN_ROOT to an authorized ECC checkout)" >&2; exit 1; }
+node "$EOC_ROOT/scripts/orchestrate-worktrees.js" plan.json --execute
 ```
 
 Example `plan.json`:

@@ -60,7 +60,7 @@ import { startFileWatcher } from "./lib/file-watcher.js"
 import type { FileWatcherHandle } from "./lib/file-watcher.js"
 import type { EocTool } from "./tools/types.ts"
 
-const EOC_VERSION = "0.1.2"
+const EOC_VERSION = "0.1.3"
 const EOC_AGENT_COUNT = 71
 const EOC_COMMAND_COUNT = 103
 const EOC_SKILL_COUNT = 311

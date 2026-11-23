@@ -89,13 +89,24 @@ ALWAYS write tests first, then implement code to make tests pass.
 
 Do not assume `npm test`. The commands in the steps and examples below use `<test>`, `<test-watch>`, and `<coverage>` as placeholders for the project's actual runner. Resolve them once before starting:
 
-1. **Run the package-manager detector** (ships with EOC):
+1. **Resolve the package manager** (the detector ships with EOC). When the ECC checkout is separate from the project under test, keep the working directory at the project root and run the detector by its absolute path:
 
    ```bash
-   node scripts/setup-package-manager.js --detect
+   # Use the configured plugin root or standalone install (~/.opencode or
+   # $EOC_CONFIG_DIR). For a reviewed and explicitly authorized ECC checkout:
+   # export EOC_PLUGIN_ROOT="/absolute/path/to/reviewed/ECC"
+   EOC_ROOT="${EOC_PLUGIN_ROOT:-${EOC_CONFIG_DIR:-$HOME/.claude}}"
+   [ -f "$EOC_ROOT/scripts/setup-package-manager.js" ] || { echo "Package-manager detector not found in the selected root (set EOC_PLUGIN_ROOT to an authorized ECC checkout)" >&2; exit 1; }
+   node "$EOC_ROOT/scripts/setup-package-manager.js" --detect
    ```
 
+   The resolution lines use the configured plugin root or standalone install and stop when the selected root lacks the helper. For an ECC checkout you have reviewed and authorized, explicitly set `EOC_PLUGIN_ROOT` to its absolute path first. Project marker files do not establish executable trust. Keep the working directory at the project under test, and keep paths quoted because install locations may contain spaces.
+
    It resolves the package manager (npm / pnpm / yarn / bun) from, in order: `EOC_PACKAGE_MANAGER`, `.opencode/package-manager.json`, the `package.json` `packageManager` field, the lockfile, then global config.
+
+   The detector reads project settings from the current working directory, so running it from the ECC checkout can select ECC's manager instead of the project's.
+
+   The standalone `pi/core` profile does not include that repository script. In that profile, resolve from project settings in this order: `EOC_PACKAGE_MANAGER`, `.opencode/package-manager.json`, the `package.json` `packageManager` field, a lockfile, then `~/.opencode/package-manager.json`; default to npm if none is set. Supported managers are npm, pnpm, yarn, and bun.
 
 2. **Distinguish the package manager from the test runner — they are not the same.** A project can use Bun to install dependencies yet still run Jest or Vitest. Inspect `package.json` `scripts.test` and the test files:
    - `scripts.test` invokes `jest` / `vitest` -> run through the detected PM (`npm test`, `pnpm test`, `yarn test`, or `bun run test`).
